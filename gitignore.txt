@@ -1,0 +1,68 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+.env/
+.env.bak/
+.venv/
+
+# Distribution / packaging
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Logs and debugging
+*.log
+*.pot
+*.pyc
+*.pyo
+*.pyd
+*.cover
+.coverage
+.tox/
+coverage.xml
+htmlcov/
+.cache/
+
+# IDE/editor folders
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+
+# pytest
+.pytest_cache/
+
+# FastAPI static/temp
+staticfiles/
+mediafiles/
+temp/
+
+# MyPy and Pyright
+.mypy_cache/
+.pyright/
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# Docker
+*.pid
+*.pid.lock
