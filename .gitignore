@@ -8,6 +8,7 @@ venv/
 .env/
 .env.bak/
 .venv/
+.env
 
 # Distribution / packaging
 build/
