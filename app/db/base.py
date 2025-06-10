@@ -1,5 +1,4 @@
 # db/base.py
 
-from sqlalchemy.orm import declarative_base
-
-Base = declarative_base()
+from app.db.base_class import Base
+from app.models import user_model  # Add other models here as needed
