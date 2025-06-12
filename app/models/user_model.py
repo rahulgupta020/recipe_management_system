@@ -20,3 +20,5 @@ class User(Base):
     role = Column(Enum(UserRole), default=UserRole.REGULAR)
     is_active = Column(Boolean(), default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    recipes = relationship("Recipe", back_populates="owner", cascade="all, delete-orphan")
