@@ -1,8 +1,8 @@
 # routes/auth.py
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
-from app.schemas.user_schema import UserCreate, UserLogin
+from app.schemas.user_schema import UserCreate, UserLogin, APIResponse
 from app.auth.auth_handler import get_password_hash, verify_password, create_access_token
 from app.models.user_model import UserModel
 from app.auth.auth_bearer import get_db
@@ -10,12 +10,17 @@ from app.auth.auth_bearer import get_db
 router = APIRouter()
 
 @router.post("/register")
-def register(user: UserCreate, db: Session = Depends(get_db)):
+def register(user: UserCreate, response: Response, db: Session = Depends(get_db)):
     existing_user = db.query(UserModel).filter(
         (UserModel.username == user.username) | (UserModel.email == user.email)
     ).first()
     if existing_user:
-        raise HTTPException(status_code=400, detail="Username or email already registered")
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return {
+            "status": "error",
+            "message": "Username or email already registered",
+            "data": None
+        }
 
     new_user = UserModel(
         username=user.username,
@@ -25,12 +30,34 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
-    return {"message": "User registered successfully"}
+    response.status_code = status.HTTP_201_CREATED
+    return {
+        "status": "success",
+        "message": "User registered successfully",
+        "data": {
+            "user_id": new_user.id,
+            "username": new_user.username,
+            "email": new_user.email
+        }
+    }
 
-@router.post("/login")
-def login(user: UserLogin, db: Session = Depends(get_db)):
+@router.post("/login", response_model=APIResponse)
+def login(user: UserLogin, response: Response, db: Session = Depends(get_db)):
     db_user = db.query(UserModel).filter(UserModel.username == user.username).first()
     if not db_user or not verify_password(user.password, db_user.password_hash):
-        raise HTTPException(status_code=401, detail="Invalid username or password")
+        response.status_code = status.HTTP_401_UNAUTHORIZED
+        return {
+            "status": "error",
+            "message": "Invalid username or password",
+            "data": None
+        }
     access_token = create_access_token(data={"sub": db_user.username})
-    return {"access_token": access_token, "token_type": "bearer"}
+    response.status_code = status.HTTP_200_OK
+    return {
+        "status": "success",
+        "message": "Login successful",
+        "data": {
+            "access_token": access_token,
+            "token_type": "bearer"
+        }
+    }
