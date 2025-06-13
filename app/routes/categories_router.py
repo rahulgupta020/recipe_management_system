@@ -1,0 +1,1 @@
+# routes/categories_router.py
