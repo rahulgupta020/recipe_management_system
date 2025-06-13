@@ -33,7 +33,7 @@ def upgrade() -> None:
     op.create_index(op.f('ix_users_email'), 'users', ['email'], unique=True)
     op.create_index(op.f('ix_users_user_id'), 'users', ['user_id'], unique=False)
     op.create_index(op.f('ix_users_username'), 'users', ['username'], unique=True)
-    op.drop_table('dummy')
+    # op.drop_table('dummy')
     # ### end Alembic commands ###
 
 
