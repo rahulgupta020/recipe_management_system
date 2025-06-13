@@ -10,7 +10,7 @@ class UserRole(enum.Enum):
     REGULAR = "regular"
     ADMIN = "admin"
 
-class User(Base):
+class UserModel(Base):
     __tablename__ = "users"
 
     user_id = Column(Integer, primary_key=True, index=True)
@@ -21,4 +21,4 @@ class User(Base):
     is_active = Column(Boolean(), default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    recipes = relationship("Recipe", back_populates="owner", cascade="all, delete-orphan")
+    recipes = relationship("RecipeModel", back_populates="owner", cascade="all, delete-orphan")
