@@ -1,0 +1,1 @@
+# routes/category_schema.py
