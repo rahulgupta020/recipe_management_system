@@ -9,7 +9,7 @@ from app.auth.auth_bearer import get_db
 
 router = APIRouter()
 
-@router.post("/register")
+@router.post("/register", response_model=APIResponse)
 def register(user: UserCreate, response: Response, db: Session = Depends(get_db)):
     existing_user = db.query(UserModel).filter(
         (UserModel.username == user.username) | (UserModel.email == user.email)

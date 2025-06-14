@@ -1,16 +1,14 @@
 # main.py
 
 from fastapi import FastAPI
-from app.routes import auth
+from app.routes import auth, users_router, recipes_router, categories_router
 
 app = FastAPI()
 
 app.include_router(auth.router)
-
-
-
-
-
+app.include_router(users_router.router)
+# app.include_router(recipes_router.router)
+# app.include_router(categories_router.router)
 
 
 
