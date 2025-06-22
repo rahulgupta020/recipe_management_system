@@ -10,6 +10,7 @@ from app.utils.email_service import email_service
 from fastapi import Body
 from datetime import datetime, timedelta, timezone
 from app.config import OTP_EXPIRY_MINUTES
+from sqlalchemy import or_
 import random
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -214,7 +215,12 @@ def resend_otp(payload: ResendOtpRequest, db: Session = Depends(get_db)):
 
 @router.post("/login", response_model=APIResponse)
 def login(user: UserLogin, response: Response, db: Session = Depends(get_db)):
-    db_user = db.query(UserModel).filter(UserModel.username == user.username).first()
+    db_user = db.query(UserModel).filter(
+        or_(
+            UserModel.username == user.username,
+            UserModel.email == user.username  # using username field for both
+        )
+    ).first()
 
     if not db_user:
         response.status_code = status.HTTP_401_UNAUTHORIZED
