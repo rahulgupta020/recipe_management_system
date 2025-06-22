@@ -9,6 +9,13 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str
 
+class VerifyOtpRequest(BaseModel):
+    user_id: int
+    otp: str
+
+class ResendOtpRequest(BaseModel):
+    email: EmailStr
+
 class UserLogin(BaseModel):
     username: str
     password: str

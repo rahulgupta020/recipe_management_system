@@ -18,7 +18,10 @@ class UserModel(Base):
     email = Column(String, unique=True, index=True, nullable=False)
     password_hash = Column(String, nullable=False)
     role = Column(Enum(UserRole), default=UserRole.REGULAR)
-    is_active = Column(Boolean(), default=True)
+    is_active = Column(Boolean(), default=False)
+    otp = Column(String, nullable=True)
+    otp_created_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     recipes = relationship("RecipeModel", back_populates="owner", cascade="all, delete-orphan")
