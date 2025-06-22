@@ -1,6 +1,6 @@
 # routes/auth.py
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status, BackgroundTasks
 from sqlalchemy.orm import Session
 from app.schemas.user_schema import UserCreate, UserLogin, APIResponse, VerifyOtpRequest, ResendOtpRequest
 from app.auth.auth_handler import get_password_hash, verify_password, create_access_token
@@ -114,13 +114,19 @@ def register(user: UserCreate, response: Response, db: Session = Depends(get_db)
 
 
 @router.post("/verify-otp", response_model=APIResponse)
-def verify_otp(payload: VerifyOtpRequest, db: Session = Depends(get_db)):
+def verify_otp(payload: VerifyOtpRequest, response: Response, db: Session = Depends(get_db)):
     user = db.query(UserModel).filter(UserModel.user_id == payload.user_id).first()
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return {
+            "status": "error",
+            "message": "User not found",
+            "data": None
+        }
+
     # Check if OTP exists
     if not user.otp:
+        response.status_code = status.HTTP_400_BAD_REQUEST
         return {
             "status": "error",
             "message": "No OTP found. Please request a new OTP.",
@@ -133,7 +139,8 @@ def verify_otp(payload: VerifyOtpRequest, db: Session = Depends(get_db)):
         user.otp = None
         user.otp_created_at = None
         db.commit()
-        
+
+        response.status_code = status.HTTP_400_BAD_REQUEST
         return {
             "status": "error",
             "message": "OTP has expired. Please request a new OTP.",
@@ -142,6 +149,7 @@ def verify_otp(payload: VerifyOtpRequest, db: Session = Depends(get_db)):
     
     # Verify OTP
     if user.otp != payload.otp:
+        response.status_code = status.HTTP_401_UNAUTHORIZED
         return {
             "status": "error",
             "message": "Invalid OTP",
@@ -154,6 +162,13 @@ def verify_otp(payload: VerifyOtpRequest, db: Session = Depends(get_db)):
     user.otp_created_at = None
     db.commit()
     
+    # ✅ Send welcome email directly here
+    email_service.send_welcome_email(
+        to_email=user.email,
+        username=user.username
+    )
+
+    response.status_code = status.HTTP_200_OK
     return {
         "status": "success",
         "message": "Email verified successfully. You are now registered!",
@@ -164,13 +179,14 @@ def verify_otp(payload: VerifyOtpRequest, db: Session = Depends(get_db)):
     }
 
 @router.post("/resend-otp", response_model=APIResponse)
-def resend_otp(payload: ResendOtpRequest, db: Session = Depends(get_db)):
+def resend_otp(payload: ResendOtpRequest, response: Response, db: Session = Depends(get_db)):
     """
     Resend OTP to user email
     """
     user = db.query(UserModel).filter(UserModel.email == payload.email).first()
 
     if not user:
+        response.status_code = status.HTTP_404_NOT_FOUND
         return {
             "status": "error",
             "message": "User not found",
@@ -178,6 +194,7 @@ def resend_otp(payload: ResendOtpRequest, db: Session = Depends(get_db)):
         }
     
     if user.is_active:
+        response.status_code = status.HTTP_400_BAD_REQUEST
         return {
             "status": "error", 
             "message": "Account is already verified",
@@ -198,6 +215,7 @@ def resend_otp(payload: ResendOtpRequest, db: Session = Depends(get_db)):
     )
     
     if email_sent:
+        response.status_code = status.HTTP_200_OK
         return {
             "status": "success",
             "message": f"New OTP sent to your email. Valid for {OTP_EXPIRY_MINUTES} minutes.",
@@ -206,6 +224,7 @@ def resend_otp(payload: ResendOtpRequest, db: Session = Depends(get_db)):
             }
         }
     else:
+        response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
         return {
             "status": "error",
             "message": "Failed to send email. Please try again.",

@@ -132,5 +132,33 @@ Recipe Management Team
         
         return self._send_email(to_email, subject, body.strip())
 
+    def send_welcome_email(self, to_email: str, username: str) -> bool:
+        """
+        Send welcome email after successful registration
+        """
+        subject = "Welcome to Recipe Management System!"
+
+        body = f"""
+    Hi {username},
+
+    Welcome to Recipe Management System! 🍳
+
+    Your account has been successfully verified and you can now:
+    - Save your favorite recipes
+    - Create custom recipe collections
+    - Share recipes with friends
+    - Discover new delicious recipes
+
+    Start exploring: http://localhost:8000
+
+    Happy cooking!
+
+    Best regards,
+    Recipe Management Team
+        """
+
+        return self._send_email(to_email, subject, body.strip())
+
+
 # Create a global instance
 email_service = EmailService()
