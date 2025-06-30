@@ -114,7 +114,7 @@ def register(user: UserCreate, response: Response, db: Session = Depends(get_db)
 
 
 @router.post("/verify-otp", response_model=APIResponse)
-def verify_otp(payload: VerifyOtpRequest, response: Response, db: Session = Depends(get_db)):
+def verify_otp(payload: VerifyOtpRequest, response: Response, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     user = db.query(UserModel).filter(UserModel.user_id == payload.user_id).first()
     if not user:
         response.status_code = status.HTTP_404_NOT_FOUND
@@ -162,11 +162,19 @@ def verify_otp(payload: VerifyOtpRequest, response: Response, db: Session = Depe
     user.otp_created_at = None
     db.commit()
     
-    # ✅ Send welcome email directly here
-    email_service.send_welcome_email(
+    # # ✅ Send welcome email directly here
+    # email_service.send_welcome_email(
+    #     to_email=user.email,
+    #     username=user.username
+    # )
+
+    # Using background_tasks
+    background_tasks.add_task(
+        email_service.send_welcome_email,
         to_email=user.email,
         username=user.username
     )
+
 
     response.status_code = status.HTTP_200_OK
     return {
