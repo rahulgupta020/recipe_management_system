@@ -272,26 +272,35 @@ def reset_password_request(payload: ResetPasswordRequest, response: Response, ba
     }
 
 @router.post("/reset-password/confirm", response_model=APIResponse)
-def confirm_reset_password(payload: ConfirmResetPassword, response: Response, db: Session = Depends(get_db)):
+def reset_password_confirm(
+    payload: ConfirmResetPassword,
+    response: Response,
+    db: Session = Depends(get_db)
+):
+    print("reset-password/confirm")
     user = db.query(UserModel).filter(UserModel.email == payload.email).first()
 
     if not user:
+        print("1st if")
         response.status_code = status.HTTP_404_NOT_FOUND
         return {
             "status": "error",
             "message": "User not found",
             "data": None
         }
+    print("ok")
 
-    # Validate OTP
-    if not user.otp or user.otp != payload.otp:
-        response.status_code = status.HTTP_401_UNAUTHORIZED
+    # Check OTP exists
+    if not user.otp:
+        print("2nd if")
+        response.status_code = status.HTTP_400_BAD_REQUEST
         return {
             "status": "error",
-            "message": "Invalid OTP",
+            "message": "No OTP found. Please request a new one.",
             "data": None
         }
-
+    print("okk")
+    # Check if OTP expired
     if is_otp_expired(user.otp_created_at):
         user.otp = None
         user.otp_created_at = None
@@ -304,7 +313,27 @@ def confirm_reset_password(payload: ConfirmResetPassword, response: Response, db
             "data": None
         }
 
-    # Set new password and clear OTP
+    # Validate OTP
+    if user.otp != payload.otp:
+        response.status_code = status.HTTP_401_UNAUTHORIZED
+        return {
+            "status": "error",
+            "message": "Invalid OTP.",
+            "data": None
+        }
+
+    # ✅ Check if new password is same as old password
+    if verify_password(payload.new_password, user.password_hash):
+        print("11 = ", payload.new_password)
+        print("22 = ", user.password_hash)
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return {
+            "status": "error",
+            "message": "New password cannot be the same as the old password.",
+            "data": None
+        }
+
+    # All good — update password
     user.password_hash = get_password_hash(payload.new_password)
     user.otp = None
     user.otp_created_at = None
@@ -313,7 +342,7 @@ def confirm_reset_password(payload: ConfirmResetPassword, response: Response, db
     response.status_code = status.HTTP_200_OK
     return {
         "status": "success",
-        "message": "Password has been reset successfully",
+        "message": "Password has been reset successfully.",
         "data": None
     }
 
