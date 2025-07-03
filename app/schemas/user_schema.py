@@ -44,6 +44,10 @@ class ConfirmResetPassword(BaseModel):
     otp: str
     new_password: str
 
+class OTPLoginRequest(BaseModel):
+    email: str
+    otp: str
+
 class APIResponse(BaseModel):
     status: str
     message: str
