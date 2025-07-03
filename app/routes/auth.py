@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status, BackgroundTasks
 from sqlalchemy.orm import Session
-from app.schemas.user_schema import UserCreate, UserLogin, APIResponse, VerifyOtpRequest, ResendOtpRequest
+from app.schemas.user_schema import UserCreate, UserLogin, APIResponse, VerifyOtpRequest, ResendOtpRequest, ResetPasswordRequest, ConfirmResetPassword
 from app.auth.auth_handler import get_password_hash, verify_password, create_access_token
 from app.models.user_model import UserModel
 from app.auth.auth_bearer import get_db
@@ -239,6 +239,83 @@ def resend_otp(payload: ResendOtpRequest, response: Response, db: Session = Depe
             "data": None
         }
 
+@router.post("/reset-password/request", response_model=APIResponse)
+def reset_password_request(payload: ResetPasswordRequest, response: Response, background_tasks:BackgroundTasks, db: Session = Depends(get_db)):
+    user = db.query(UserModel).filter(UserModel.email == payload.email).first()
+
+    if not user:
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return {
+            "status": "error",
+            "message": "User not found with this email",
+            "data": None
+        }
+
+    # Generate new OTP
+    otp = generate_otp()
+    user.otp = otp
+    user.otp_created_at = datetime.now()
+    db.commit()
+
+    background_tasks.add_task(
+        email_service.send_otp_email,
+        to_email=user.email,
+        otp=otp,
+        username=user.username
+    )
+
+    response.status_code = status.HTTP_200_OK
+    return {
+        "status": "success",
+        "message": f"Reset OTP sent to your email. Valid for {OTP_EXPIRY_MINUTES} minutes.",
+        "data": None
+    }
+
+@router.post("/reset-password/confirm", response_model=APIResponse)
+def confirm_reset_password(payload: ConfirmResetPassword, response: Response, db: Session = Depends(get_db)):
+    user = db.query(UserModel).filter(UserModel.email == payload.email).first()
+
+    if not user:
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return {
+            "status": "error",
+            "message": "User not found",
+            "data": None
+        }
+
+    # Validate OTP
+    if not user.otp or user.otp != payload.otp:
+        response.status_code = status.HTTP_401_UNAUTHORIZED
+        return {
+            "status": "error",
+            "message": "Invalid OTP",
+            "data": None
+        }
+
+    if is_otp_expired(user.otp_created_at):
+        user.otp = None
+        user.otp_created_at = None
+        db.commit()
+
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return {
+            "status": "error",
+            "message": "OTP has expired. Please request a new one.",
+            "data": None
+        }
+
+    # Set new password and clear OTP
+    user.password_hash = get_password_hash(payload.new_password)
+    user.otp = None
+    user.otp_created_at = None
+    db.commit()
+
+    response.status_code = status.HTTP_200_OK
+    return {
+        "status": "success",
+        "message": "Password has been reset successfully",
+        "data": None
+    }
 
 @router.post("/login", response_model=APIResponse)
 def login(user: UserLogin, response: Response, db: Session = Depends(get_db)):

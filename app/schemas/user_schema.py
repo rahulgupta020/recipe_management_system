@@ -36,6 +36,13 @@ class UserUpdateSchema(BaseModel):
     role: Optional[UserRole] = None
     is_active: Optional[bool] = None
 
+class ResetPasswordRequest(BaseModel):
+    email: str
+
+class ConfirmResetPassword(BaseModel):
+    email: str
+    otp: str
+    new_password: str
 
 class APIResponse(BaseModel):
     status: str
