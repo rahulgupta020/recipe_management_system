@@ -85,10 +85,10 @@ def register(user: UserCreate, response: Response, background_tasks: BackgroundT
         # )
 
         # # send whatsapp using Twilio
-        send_otp_whatsapp(
-            phone_number=user.phone_number,
-            otp=otp
-        )
+        # send_otp_whatsapp(
+        #     phone_number=user.phone_number,
+        #     otp=otp
+        # )
 
         if email_sent:
             response.status_code = status.HTTP_202_ACCEPTED
