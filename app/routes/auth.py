@@ -14,6 +14,7 @@ from sqlalchemy import or_
 import random
 from app.utils.email_tasks import send_welcome_email_task
 from app.utils.sms_service import send_otp_sms
+from app.utils.whatsapp_service import send_otp_whatsapp
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -56,6 +57,7 @@ def register(user: UserCreate, response: Response, background_tasks: BackgroundT
     new_user = UserModel(
         username=user.username,
         email=user.email,
+        phone_number=user.phone_number,
         password_hash=get_password_hash(user.password),
         is_active=False,
         otp=otp,
@@ -75,14 +77,19 @@ def register(user: UserCreate, response: Response, background_tasks: BackgroundT
             username=user.username
         )
 
-        # send sms using Twilio
-        background_tasks.add_task(
-            send_otp_sms,
+        # # send sms using Twilio
+        # background_tasks.add_task(
+        #     send_otp_sms,
+        #     phone_number=user.phone_number,
+        #     otp=otp
+        # )
+
+        # # send whatsapp using Twilio
+        send_otp_whatsapp(
             phone_number=user.phone_number,
             otp=otp
         )
 
-        
         if email_sent:
             response.status_code = status.HTTP_202_ACCEPTED
             return {
