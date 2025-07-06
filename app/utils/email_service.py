@@ -105,7 +105,7 @@ Recipe Management Team
         
         return self._send_email(to_email, subject, body.strip())
     
-    def send_welcome_email(self, to_email: str, username: str) -> bool:
+    def send_welcome_email1(self, to_email: str, username: str) -> bool:      
         """
         Send welcome email after successful registration
         """
@@ -133,6 +133,7 @@ Recipe Management Team
         return self._send_email(to_email, subject, body.strip())
 
     def send_welcome_email(self, to_email: str, username: str) -> bool:
+        print("send_welcome_email called")
         """
         Send welcome email after successful registration
         """

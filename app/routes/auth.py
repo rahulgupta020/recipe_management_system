@@ -12,6 +12,7 @@ from datetime import datetime, timedelta, timezone
 from app.config import OTP_EXPIRY_MINUTES
 from sqlalchemy import or_
 import random
+from app.utils.email_tasks import send_welcome_email_task
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -169,12 +170,17 @@ def verify_otp(payload: VerifyOtpRequest, response: Response, background_tasks: 
     # )
 
     # Using background_tasks
-    background_tasks.add_task(
-        email_service.send_welcome_email,
+    # background_tasks.add_task(
+    #     email_service.send_welcome_email,
+    #     to_email=user.email,
+    #     username=user.username
+    # )
+
+    print("send_welcome_email_task called")
+    send_welcome_email_task.delay(
         to_email=user.email,
         username=user.username
     )
-
 
     response.status_code = status.HTTP_200_OK
     return {
