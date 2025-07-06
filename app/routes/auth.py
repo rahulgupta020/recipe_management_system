@@ -170,17 +170,17 @@ def verify_otp(payload: VerifyOtpRequest, response: Response, background_tasks: 
     # )
 
     # Using background_tasks
-    # background_tasks.add_task(
-    #     email_service.send_welcome_email,
-    #     to_email=user.email,
-    #     username=user.username
-    # )
-
-    print("send_welcome_email_task called")
-    send_welcome_email_task.delay(
+    background_tasks.add_task(
+        email_service.send_welcome_email,
         to_email=user.email,
         username=user.username
     )
+
+    # print("send_welcome_email_task called")
+    # send_welcome_email_task.delay(
+    #     to_email=user.email,
+    #     username=user.username
+    # )
 
     response.status_code = status.HTTP_200_OK
     return {
