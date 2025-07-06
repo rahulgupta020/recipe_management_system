@@ -7,6 +7,7 @@ from app.models.user_model import UserRole
 class UserCreate(BaseModel):
     username: str
     email: EmailStr
+    phone_number: str
     password: str
 
 class VerifyOtpRequest(BaseModel):

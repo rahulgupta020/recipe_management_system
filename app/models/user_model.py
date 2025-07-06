@@ -16,6 +16,7 @@ class UserModel(Base):
     user_id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True, nullable=False)
     email = Column(String, unique=True, index=True, nullable=False)
+    phone_number = Column(String, unique=True, nullable=True)
     password_hash = Column(String, nullable=False)
     role = Column(Enum(UserRole), default=UserRole.REGULAR)
     is_active = Column(Boolean(), default=False)

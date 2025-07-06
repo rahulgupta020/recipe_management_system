@@ -13,6 +13,7 @@ from app.config import OTP_EXPIRY_MINUTES
 from sqlalchemy import or_
 import random
 from app.utils.email_tasks import send_welcome_email_task
+from app.utils.sms_service import send_otp_sms
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -37,7 +38,7 @@ def is_otp_expired(otp_created_at):
 
 
 @router.post("/register", response_model=APIResponse)
-def register(user: UserCreate, response: Response, db: Session = Depends(get_db)):
+def register(user: UserCreate, response: Response, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     existing_user = db.query(UserModel).filter(
         (UserModel.username == user.username) | (UserModel.email == user.email)
     ).first()
@@ -73,6 +74,14 @@ def register(user: UserCreate, response: Response, db: Session = Depends(get_db)
             otp=otp,
             username=user.username
         )
+
+        # send sms using Twilio
+        background_tasks.add_task(
+            send_otp_sms,
+            phone_number=user.phone_number,
+            otp=otp
+        )
+
         
         if email_sent:
             response.status_code = status.HTTP_202_ACCEPTED
@@ -176,6 +185,7 @@ def verify_otp(payload: VerifyOtpRequest, response: Response, background_tasks: 
         username=user.username
     )
 
+    # celery rabbitmq
     # print("send_welcome_email_task called")
     # send_welcome_email_task.delay(
     #     to_email=user.email,
