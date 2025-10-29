@@ -3,7 +3,7 @@
 from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy.orm import Session
 from app.models.user_model import UserModel
-from app.auth.auth_bearer import get_db
+from app.auth.auth_bearer import get_db, get_current_user
 from app.schemas.user_schema import UserGetSchema, UserUpdateSchema
 from app.schemas.user_schema import APIResponse
 from typing import Union
@@ -85,4 +85,39 @@ def delete_user(user_id: int, response: Response, db: Session = Depends(get_db))
         "status": "success",
         "message": "User deleted successfully",
         "data": UserGetSchema.model_validate(result)
+    }
+
+@router.get("/me", response_model=APIResponse)
+def get_my_profile(
+    response: Response,
+    current_user: UserModel = Depends(get_current_user)
+):
+    user_data = UserGetSchema.model_validate(current_user)
+    return {
+        "status": "success",
+        "message": "User profile fetched successfully",
+        "data": user_data.dict(),
+    }
+
+@router.put("/me", response_model=APIResponse)
+def update_my_profile(
+    payload: UserUpdateSchema,
+    db: Session = Depends(get_db),
+    current_user: UserModel = Depends(get_current_user)
+):
+    if payload.username:
+        current_user.username = payload.username
+    if payload.phone_number:
+        current_user.phone_number = payload.phone_number
+    
+    db.add(current_user)
+    db.commit()
+    db.refresh(current_user)
+
+    user_data = UserGetSchema.model_validate(current_user)
+
+    return {
+        "status": "success",
+        "message": "Profile updated successfully",
+        "data": user_data.dict(),
     }

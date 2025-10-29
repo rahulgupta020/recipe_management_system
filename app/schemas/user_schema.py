@@ -25,6 +25,7 @@ class UserGetSchema(BaseModel):
     user_id: int
     username: str
     email: EmailStr
+    phone_number: str
     role: str
     is_active: bool
 
